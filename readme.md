@@ -60,8 +60,8 @@ Key configurable parameters include:
 - Go-E Genesis wallbox
 - Fronius Gen24 inverter
 - Required OpenHAB plugins:
-  - Go-E Charger binding
-  - Fronius binding
+  - [Go-E Charger binding](https://www.openhab.org/addons/bindings/goecharger/)
+  - [Fronius binding](https://www.openhab.org/addons/bindings/fronius/)
 
 ## Installation
 
@@ -93,7 +93,40 @@ Key configurable parameters include:
 
     Add the following to your sitemap configuration:
 
-[Insert placeholder for sitemap configuration]
+```
+Text item=Production_Power label="PV-Anlage [%.0f W]" icon="solarplant" {
+            Text item=Production_Power icon=solarplant
+            Text item=Meter_PowerSum icon=energy
+
+            Switch item=Chart_Interval label="Leistungsverlauf" icon="line" mappings=[0="Stunde", 1="Tag", 2="Woche"]
+            Chart item=gPower period=h refresh=60 service="mysql" visibility=[Chart_Interval==0]
+            Chart item=gPower period=D refresh=300 service="mysql" visibility=[Chart_Interval==1, Chart_Interval=="Uninitialized"]
+            Chart item=gPower period=W refresh=1800 service="mysql" visibility=[Chart_Interval==2]
+            
+}
+
+Text item=GoEChargerPowerAll label="Wallbox" icon="battery" {
+
+
+            Switch item=ManuellLaden
+            Switch item=ExcessCharging
+            Text item=AvailablePowerCharger label="Verfügbar für Wallbox [%.0f W]" icon=energy
+            Text item=GoEChargerPowerAll icon=energy
+            Setpoint item=GoEChargerMaxCurrent label="Strombegrenzung [%s]" icon=poweroutlet_eu minValue=6 maxValue=16 step=1
+            Setpoint item=GoEChargerPhases icon=poweroutlet_eu minValue=1 maxValue=3 step=2
+            Text item=GoEChargerSessionChargedEnergy icon=battery
+            Text item=GoEChargerPwmSignal label="PWM vom Auto" icon=text
+            Text item=GoEChargerError icon=text
+            Text label="Details" icon="settings" {
+                Text item=GoEChargerCurrentL1 icon=energy
+                Text item=GoEChargerCurrentL2 icon=energy
+                Text item=GoEChargerCurrentL3 icon=energy
+                Text item=GoEChargerPowerL1 icon=energy
+                Text item=GoEChargerPowerL2 icon=energy
+                Text item=GoEChargerPowerL3 icon=energy
+        }   
+}
+```
 
     This provides the user interface for:
         Monitoring charging status

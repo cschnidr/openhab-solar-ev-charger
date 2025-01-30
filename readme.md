@@ -8,13 +8,13 @@ Excess charging refers to the intelligent use of surplus solar energy for chargi
 
 ## System Overview
 
-<img src="pv-excess-charging.svg" width="500" />
+<img src="pv-excess-charging.svg" width="600" />
 
 ### Real-World Performance
 
 The following diagrams demonstrate the system's operation in practice:
 
-<img src="24012025.png" height="200" /> <img src="29012025.png" height="200" />
+<img src="24012025.png" height="400" /> <img src="29012025.png" height="400" />
 
 Solar production (orange) and charging correlation demonstrating optimized self-consumption (yellow).
 

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This project implements an intelligent excess charging control system for electric vehicles, integrating OpenHAB 4 with a Go-E Genesis wallbox and a Fronius Gen24 inverter. The system optimizes electric vehicle charging by utilizing surplus solar power, maximizing self-consumption while minimizing grid dependency.
+This project implements an intelligent excess charging control system for electric vehicles, integrating OpenHAB 4 with a Go-E Genesis wallbox and a Fronius Gen24 inverter in conjunction with a Fronius Smart Meter (interconnected via Modbus). The system optimizes electric vehicle charging by utilizing surplus solar power, maximizing self-consumption while minimizing grid dependency.
 
 Excess charging refers to the intelligent use of surplus solar energy for charging electric vehicles. When solar production exceeds household consumption, the system automatically directs this excess power to vehicle charging, ensuring optimal use of renewable energy and reducing electricity costs.
 

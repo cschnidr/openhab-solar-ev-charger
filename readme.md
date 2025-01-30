@@ -46,7 +46,6 @@ The system implements several sophisticated control mechanisms to ensure stable 
 - Automatic error detection and handling
 
 ## Configuration Parameters
-
 Key configurable parameters include:
 - Charging current limits (6-16A)
 - Phase switching thresholds
@@ -55,7 +54,6 @@ Key configurable parameters include:
 - Notification settings
 
 ## System Requirements
-
 - OpenHAB 4 installation
 - Go-E Genesis wallbox
 - Fronius Gen24 inverter
@@ -66,32 +64,31 @@ Key configurable parameters include:
 ## Installation
 
 ### Install Required Bindings
-    Open OpenHAB settings
-    Navigate to Settings → Things → Install
-    Search and install:
-        Go-E Charger binding
-        Fronius binding
+1. Open OpenHAB settings
+2. Navigate to Settings → Things → Install
+3. Search and install:
+    Go-E Charger binding
+    Fronius binding
 
 ### Configure Items
-    Copy the provided items file content to your OpenHAB items configuration
-    The items file includes all necessary definitions for:
-        Fronius inverter measurements
-        Go-E charger controls
-        System status variables
-        Countdown timers
+Copy the provided items file content to your OpenHAB items configuration
+The items file includes all necessary definitions for:
+- Fronius inverter measurements
+- Go-E charger controls
 
 ### Add Rule
-    Copy the provided rule file to your OpenHAB rules directory
-    Verify that all item references match your configuration
-    The rule implements:
-        Excess charging control logic
-        Phase switching
-        Safety timers
-        Manual control options
+1. Copy the provided rule file to your OpenHAB rules directory
+2. Verify that all item references match your configuration
+
+--> The rule implements:
+    - Excess charging control logic
+    - Phase switching
+    - Safety timers
+    - Manual control options
 
 ### Configure Sitemap
 
-    Add the following to your sitemap configuration:
+Add the following to your sitemap configuration:
 
 ```
 Text item=Production_Power label="PV-Anlage [%.0f W]" icon="solarplant" {
@@ -128,8 +125,4 @@ Text item=GoEChargerPowerAll label="Wallbox" icon="battery" {
 }
 ```
 
-    This provides the user interface for:
-        Monitoring charging status
-        Controlling manual charging
-        Viewing power flows
 

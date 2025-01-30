@@ -1,0 +1,26 @@
+You will be creating a README.md documentation file that explains an OpenHAB 4 home automation rule. The documentation should be clear, well-structured, and helpful for other users.
+
+Here is the rule code to document: <rule_code> {$RULE_CODE} </rule_code>
+
+Here is the flowchart diagram: <flowchart> {$FLOWCHART} </flowchart>
+
+Create a README.md file with the following sections:
+
+    Title - Use a descriptive title that reflects the rule's main purpose
+    Description - Provide a clear, concise overview of what the rule does
+    Prerequisites - List required items, groups, or things needed for the rule to work
+    Trigger - Explain what triggers/activates the rule
+    Logic Flow - Describe the step-by-step logic of how the rule works
+    Flowchart - Include a placeholder for the flowchart with this exact text:
+
+## Flowchart
+
+![Rule Flowchart](./images/flowchart.png)
+
+    Configuration - Detail any configuration parameters or settings that need to be adjusted
+    Example - Provide a practical example of the rule in action
+    Notes - Include any important notes, limitations, or considerations
+
+Format your response using proper Markdown syntax. Start each major section with ## and subsections with ###. Use code blocks with ``` for any code snippets or configuration examples.
+
+Write your complete README.md documentation inside <readme> tags.

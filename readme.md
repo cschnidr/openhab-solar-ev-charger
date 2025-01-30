@@ -14,11 +14,9 @@ Excess charging refers to the intelligent use of surplus solar energy for chargi
 
 The following diagrams demonstrate the system's operation in practice:
 
-[Insert placeholder for consumption_diagram.png]
-*Figure 1: Power consumption patterns showing efficient use of excess solar energy*
+<img src="24012025.png" height="200" /> <img src="29012025.png" height="200" />
 
-[Insert placeholder for production_diagram.png]
-*Figure 2: Solar production and charging correlation demonstrating optimized self-consumption*
+Solar production (orange) and charging correlation demonstrating optimized self-consumption (yellow).
 
 ## Key Features
 

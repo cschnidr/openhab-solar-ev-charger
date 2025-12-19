@@ -1,0 +1,8 @@
+// Add these two new items to your existing solar.items file:
+
+Switch MinimalExcessCharging       "Minimal Überschussladen"
+Switch AllowPhaseSwitching         "Phasenumschaltung erlauben"
+
+// These should be added alongside your existing switches:
+// Switch ExcessCharging              "Überschussladen"
+// Switch ManuellLaden                "Manuell Laden"

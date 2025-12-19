@@ -1,0 +1,231 @@
+/*
+ * Excess Charging Control Rule for Electric Vehicle
+ *
+ * This rule manages charging of an electric vehicle based on excess solar power.
+ * It runs every 30 seconds and implements the following features:
+ * - Dynamic charging current adjustment based on available power
+ * - Automatic switching between 1-phase and 3-phase charging
+ * - Minimal excess charging mode (600W threshold for winter)
+ * - Global phase switching control
+ * - Safety delays for state changes to prevent rapid switching
+ * - Countdown timers for major state changes
+ */
+
+rule "Excess Charging Control"
+when
+    Time cron "*/30 * * * * ?"
+then
+    // Configuration constants
+    val int minCurrent = 6
+    val int maxCurrent = 16
+    val int singlePhasePowerLimit = 1380
+    val int threePhasePowerLimit = 4140
+    val int powerHysteresis = 200 // Phase change
+    val int minimalChargingStartThreshold = 600  // Start minimal charging
+    val int minimalChargingStopThreshold = 300   // Stop minimal charging
+    val int voltagePerPhase = 230
+    val int currentHysteresis = 1 // Amp change
+    val int minTimeBetweenChanges = 30
+    val int minTimeBetweenPhaseChanges = 600
+
+    // Script exit conditions
+    if (GoEChargerPwmSignal.state == UNDEF ||
+        GoEChargerPwmSignal.state == "READY_NO_CAR" ||
+        GoEChargerPwmSignal.state == "IDLE" ||
+        (ExcessCharging.state != ON && MinimalExcessCharging.state != ON)) {
+        return
+    }
+
+    // Calculate available power
+    val Number chargerPower = GoEChargerPowerAll.state as Number
+    val Number gridPower = Grid_Power.state as Number
+    val int availablePower = (gridPower.intValue * -1) + chargerPower.intValue
+    AvailablePowerCharger.sendCommand(availablePower)
+
+    // Determine effective thresholds based on active modes
+    val boolean minimalModeActive = MinimalExcessCharging.state == ON
+    val int effectiveStartThreshold = if (minimalModeActive) minimalChargingStartThreshold else singlePhasePowerLimit
+    val int effectiveStopThreshold = if (minimalModeActive) minimalChargingStopThreshold else (singlePhasePowerLimit - powerHysteresis)
+
+    // Initialize timestamps if not exists
+    if (LastStateChangeTime.state === NULL) {
+        LastStateChangeTime.postUpdate(new DateTimeType())
+    }
+    if (LastPhaseChangeTime.state === NULL) {
+        LastPhaseChangeTime.postUpdate(new DateTimeType())
+    }
+
+    // Check time elapsed since last changes
+    val ZonedDateTime currentTime = ZonedDateTime.now()
+    val ZonedDateTime lastStateChange = (LastStateChangeTime.state as DateTimeType).getZonedDateTime()
+    val ZonedDateTime lastPhaseChange = (LastPhaseChangeTime.state as DateTimeType).getZonedDateTime()
+
+    val Integer secondsSinceLastStateChange = Duration.between(lastStateChange, currentTime).toSeconds().intValue()
+    val Integer secondsSinceLastPhaseChange = Duration.between(lastPhaseChange, currentTime).toSeconds().intValue()
+
+    // Initialize countdown items if NULL
+    if (ChargingStopCountdown.state === NULL) {
+        ChargingStopCountdown.postUpdate(0)
+    }
+    if (PhaseChangeCountdown.state === NULL) {
+        PhaseChangeCountdown.postUpdate(0)
+    }
+
+    // Power threshold checking with hysteresis and countdown
+    if (GoEChargerForceState.state == 0 || GoEChargerForceState.state == 2) {
+        if (availablePower < effectiveStopThreshold &&
+            secondsSinceLastStateChange >= minTimeBetweenChanges) {
+
+            // Start or continue countdown
+            if (ChargingStopCountdown.state == 0) {
+                ChargingStopCountdown.postUpdate(4)  // Start countdown from 4 (2 minutes)
+                return
+            } else if (ChargingStopCountdown.state > 1) {
+                ChargingStopCountdown.postUpdate((ChargingStopCountdown.state as Number).intValue - 1)
+                logInfo("Excess Charging", "Low power countdown: {} cycles remaining", ChargingStopCountdown.state)
+                return
+            } else {
+                // Actually stop charging after countdown complete
+                GoEChargerForceState.sendCommand(1)
+                ManuellLaden.sendCommand(OFF)
+                ChargingStopCountdown.postUpdate(0)
+                logInfo("Excess Charging", "Insufficient power ({} W). Charging disabled.", availablePower)
+                sendNotification("christoph@schnidrig.net",
+                    String.format("Charging stopped: Insufficient power (%d W)", availablePower))
+                LastStateChangeTime.postUpdate(new DateTimeType())
+                return
+            }
+        } else {
+            // Reset countdown if power is sufficient
+            ChargingStopCountdown.postUpdate(0)
+        }
+    } else {
+        if (availablePower < effectiveStartThreshold ||
+            secondsSinceLastStateChange < minTimeBetweenChanges) {
+            return
+        }
+    }
+
+    // Current adjustment logic
+    var int currentPhases = (GoEChargerPhases.state as Number).intValue
+    val int calculatedCurrent = Math.floor(availablePower / (voltagePerPhase * currentPhases)).intValue
+    val int targetCurrent = Math.min(
+        Math.max(calculatedCurrent, minCurrent),
+        maxCurrent
+    )
+
+    val int currentAmps = (GoEChargerMaxCurrent.state as Number).intValue
+
+    // current adjustment
+    if (Math.abs(currentAmps - targetCurrent) >= currentHysteresis) {
+        GoEChargerMaxCurrent.sendCommand(targetCurrent)
+        logInfo("Excess Charging", "Charging current adjusted from {}A to {}A. Available power: {}W",
+            currentAmps, targetCurrent, availablePower)
+        LastStateChangeTime.postUpdate(new DateTimeType())
+    }
+
+    // Phase switching with hysteresis, minimum time between changes, and countdown
+    if (AllowPhaseSwitching.state == ON && secondsSinceLastPhaseChange >= minTimeBetweenPhaseChanges) {
+        if (currentPhases == 1 && availablePower >= (threePhasePowerLimit + powerHysteresis)) {
+            if (PhaseChangeCountdown.state == 0) {
+                PhaseChangeCountdown.postUpdate(6)
+                return
+            } else if (PhaseChangeCountdown.state > 1) {
+                PhaseChangeCountdown.postUpdate((PhaseChangeCountdown.state as Number).intValue - 1)
+                logInfo("Excess Charging", "Phase change countdown (to 3-phase): {} cycles remaining", PhaseChangeCountdown.state)
+                return
+            } else {
+                // Calculate safe current for three-phase mode
+                val int recalculatedCurrent = Math.floor(availablePower / (voltagePerPhase * 3)).intValue
+                val int safeCurrent = Math.min(Math.max(recalculatedCurrent, minCurrent), maxCurrent)
+
+                // Send the correct current limit to the Go-e Charger first
+                GoEChargerMaxCurrent.sendCommand(safeCurrent)
+                logInfo("Excess Charging", "Pre-adjusted current to {}A before switching to 3-phase.", safeCurrent)
+
+                // Wait a short time (optional) to let the charger process this command
+                Thread::sleep(2000)
+
+                GoEChargerPhases.sendCommand(3)
+
+                PhaseChangeCountdown.postUpdate(0)
+                logInfo("Excess Charging", "Switched to 3-phase charging. Available power: {} W", availablePower)
+                sendNotification("christoph@schnidrig.net",
+                    String.format("Switched to 3-phase charging (Available: %d W)", availablePower))
+                LastPhaseChangeTime.postUpdate(new DateTimeType())
+                LastStateChangeTime.postUpdate(new DateTimeType())
+            }
+        } else if (currentPhases == 3 && availablePower <= (threePhasePowerLimit - powerHysteresis)) {
+            if (PhaseChangeCountdown.state == 0) {
+                PhaseChangeCountdown.postUpdate(4)
+                return
+            } else if (PhaseChangeCountdown.state > 1) {
+                PhaseChangeCountdown.postUpdate((PhaseChangeCountdown.state as Number).intValue - 1)
+                logInfo("Excess Charging", "Phase change countdown (to 1-phase): {} cycles remaining", PhaseChangeCountdown.state)
+                return
+            } else {
+                GoEChargerPhases.sendCommand(1)
+                Thread::sleep(2000)
+
+                PhaseChangeCountdown.postUpdate(0)
+                logInfo("Excess Charging", "Switched to 1-phase charging. Available power: {} W", availablePower)
+                sendNotification("christoph@schnidrig.net",
+                    String.format("Switched to 1-phase charging (Available: %d W)", availablePower))
+                LastPhaseChangeTime.postUpdate(new DateTimeType())
+                LastStateChangeTime.postUpdate(new DateTimeType())
+            }
+        } else {
+            PhaseChangeCountdown.postUpdate(0)
+        }
+    }
+
+    // Initialize charging start countdown if NULL
+if (ChargingStartCountdown.state === NULL) {
+    ChargingStartCountdown.postUpdate(0)
+}
+
+// Enable charging if it's stopped and we have sufficient power
+if (GoEChargerForceState.state != 0 && secondsSinceLastStateChange >= minTimeBetweenChanges) {
+    if (ChargingStartCountdown.state == 0) {
+        ChargingStartCountdown.postUpdate(4)  // Start countdown from 4 (2 minutes)
+        return
+    } else if (ChargingStartCountdown.state > 1) {
+        ChargingStartCountdown.postUpdate((ChargingStartCountdown.state as Number).intValue - 1)
+        logInfo("Excess Charging", "Start charging countdown: {} cycles remaining", ChargingStartCountdown.state)
+        return
+    } else {
+        // Actually start charging after countdown complete
+        GoEChargerTransaction.sendCommand(0)
+        GoEChargerForceState.sendCommand(0)
+        ChargingStartCountdown.postUpdate(0)
+        logInfo("Excess Charging", "Charging enabled. Available power: {}W", availablePower)
+        sendNotification("christoph@schnidrig.net",
+            String.format("Charging started (Available: %d W)", availablePower))
+        LastStateChangeTime.postUpdate(new DateTimeType())
+    }
+} else {
+    // Reset countdown if conditions are not met
+    ChargingStartCountdown.postUpdate(0)
+}
+
+    LastAvailablePower.postUpdate(availablePower)
+end
+
+
+rule "Manual Charging Control"
+when
+    Item ManuellLaden changed
+then
+    if (ExcessCharging.state == OFF && MinimalExcessCharging.state == OFF) { // Only handle manual control when both excess charging modes are OFF
+        if (ManuellLaden.state == ON) {
+            GoEChargerTransaction.sendCommand(0)
+            GoEChargerForceState.sendCommand(2) // Force state (Neutral=0, Off=1, On=2)
+            logInfo("Manual Charging", "Manual charging enabled")
+            sendNotification("christoph@schnidrig.net", "Manual charging mode enabled")
+        } else {
+            GoEChargerForceState.sendCommand(1) // Force state (Neutral=0, Off=1, On=2)
+            logInfo("Manual Charging", "Manual charging disabled")
+            sendNotification("christoph@schnidrig.net", "Manual charging mode disabled")
+        }
+    }
+end

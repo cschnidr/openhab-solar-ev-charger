@@ -1,0 +1,66 @@
+Group:Number gPower 
+
+Number:Power AC_Power { channel="fronius:powerinverter:mybridge:myinverter:inverterdatachannelpac" }
+Number:Energy Day_Energy { channel="fronius:powerinverter:mybridge:myinverter:inverterdatachanneldayenergy" }
+Number:Energy Total_Energy { channel="fronius:powerinverter:mybridge:myinverter:inverterdatachanneltotal" }
+Number:Energy Year_Energy { channel="fronius:powerinverter:mybridge:myinverter:inverterdatachannelyear" }
+
+Number ErrorCode { channel="fronius:powerinverter:mybridge:myinverter:inverterdatadevicestatuserrorcode" }
+Number StatusCode { channel="fronius:powerinverter:mybridge:myinverter:inverterdatadevicestatusstatuscode" }
+Number:Power Grid_Power { channel="fronius:powerinverter:mybridge:myinverter:powerflowchannelpgrid" }
+Number:Power Load_Power { channel="fronius:powerinverter:mybridge:myinverter:powerflowchannelpload" }
+Number:Power Load_Power_Negated "Verbrauch aktuell [%.0f W]" (gPower) { channel="fronius:powerinverter:mybridge:myinverter:powerflowchannelpload" [profile="basic-profiles:invert"]}
+
+Number:Power Production_Power "Produktion aktuell [%.0f W]" (gPower) { channel="fronius:powerinverter:mybridge:myinverter:powerflowchannelppv" }
+Number:Dimensionless Power_Autonomy { channel="fronius:powerinverter:mybridge:myinverter:powerflowautonomy" }
+Number:Dimensionless Power_SelfConsumption "Eigenverbrauch" { channel="fronius:powerinverter:mybridge:myinverter:powerflowselfconsumption" }
+
+Number:Power Meter_PowerPhase1 { channel="fronius:meter:mybridge:mymeter:powerrealphase1" }
+Number:Power Meter_PowerPhase2 { channel="fronius:meter:mybridge:mymeter:powerrealphase2" }
+Number:Power Meter_PowerPhase3 { channel="fronius:meter:mybridge:mymeter:powerrealphase3" }
+Number:Power Meter_PowerSum "Verbrauch aktuell [%.0f W]" { channel="fronius:meter:mybridge:mymeter:powerrealsum" }
+
+Number:Energy Meter_EnergyConsumed { channel="fronius:meter:mybridge:mymeter:energyrealsumconsumed" }
+Number:Energy Meter_EnergyProduced { channel="fronius:meter:mybridge:mymeter:energyrealsumproduced" }
+
+
+Switch ExcessCharging              "Überschussladen"
+Switch MinimalExcessCharging       "Minimal Überschussladen"
+Switch AllowPhaseSwitching         "Phasenumschaltung erlauben"
+Switch ManuellLaden                "Manuell Laden"
+DateTime LastStateChangeTime
+DateTime LastPhaseChangeTime
+Number LastAvailablePower
+Number:Power AvailablePowerCharger "Überschuss für Wallbox"
+// For Countdown Timers
+Number ChargingStopCountdown "Charging Stop Countdown [%d]"
+Number PhaseChangeCountdown "Phase Change Countdown [%d]"
+Number ChargingStartCountdown "Charging Start Countdown [%d]"
+
+
+Number:ElectricCurrent     GoEChargerMaxCurrent                 "Strombegrenzung [%s]"                       {channel="goecharger:goe:garage:maxCurrent"}
+Number:ElectricCurrent     GoEChargerMaxCurrentTemp             "Maximum current temporary"             {channel="goecharger:goe:garage:maxCurrentTemp"}
+Number                     GoEChargerForceState                 "Force state"                           {channel="goecharger:goe:garage:forceState"}
+Number                     GoEChargerPhases                     "Phasen aktuell"                                {channel="goecharger:goe:garage:phases"}
+Number                     GoEChargerTransaction                "Access state"                                {channel="goecharger:goe:garage:transaction"} 
+String                     GoEChargerPwmSignal                  "Pwm signal status"                     {channel="goecharger:goe:garage:pwmSignal"}
+String                     GoEChargerError                      "Error code"                            {channel="goecharger:goe:garage:error"}
+Number:ElectricPotential   GoEChargerVoltageL1                  "Voltage l1"                            {channel="goecharger:goe:garage:voltageL1"}
+Number:ElectricPotential   GoEChargerVoltageL2                  "Voltage l2"                            {channel="goecharger:goe:garage:voltageL2"}
+Number:ElectricPotential   GoEChargerVoltageL3                  "Voltage l3"                            {channel="goecharger:goe:garage:voltageL3"}
+Number:ElectricCurrent     GoEChargerCurrentL1                  "Strom L1 [%.0f A]"                            {channel="goecharger:goe:garage:currentL1"}
+Number:ElectricCurrent     GoEChargerCurrentL2                  "Strom L2 [%.0f A]"                            {channel="goecharger:goe:garage:currentL2"}
+Number:ElectricCurrent     GoEChargerCurrentL3                  "Strom L3 [%.0f A]"                            {channel="goecharger:goe:garage:currentL3"}
+Number:Power               GoEChargerPowerL1                    "Leistung L1 [%.0f W]"                              {channel="goecharger:goe:garage:powerL1"}
+Number:Power               GoEChargerPowerL2                    "Leistung L2 [%.0f W]"                              {channel="goecharger:goe:garage:powerL2"}
+Number:Power               GoEChargerPowerL3                    "Leistung L3 [%.0f W]"                              {channel="goecharger:goe:garage:powerL3"}
+Number:Power               GoEChargerPowerAll                   "Ladeleistung  [%.0f W]"         (gPower)               {channel="goecharger:goe:garage:powerAll"}
+Number:Energy              GoEChargerSessionChargeEnergyLimit   "Current session charge energy limit"   {channel="goecharger:goe:garage:sessionChargeEnergyLimit"}
+Number:Energy              GoEChargerSessionChargedEnergy       "Aktuell geladen [%.2f kWh]"        {channel="goecharger:goe:garage:sessionChargedEnergy"}
+Number:Energy              GoEChargerTotalChargedEnergy         "Total charged energy"                  {channel="goecharger:goe:garage:totalChargedEnergy"}
+Switch                     GoEChargerAllowCharging              "Laden"                        {channel="goecharger:goe:garage:allowCharging"}
+Number:ElectricCurrent     GoEChargerCableCurrent               "Cable encoding"                        {channel="goecharger:goe:garage:cableCurrent"}
+Number:Temperature         GoEChargerTemperatureType2Port       "Temperature type 2 port"               {channel="goecharger:goe:garage:temperatureType2Port"}
+Number:Temperature         GoEChargerTemperatureCircuitBoard    "Temperature circuit board"             {channel="goecharger:goe:garage:temperature"}
+String                     GoEChargerFirmware                   "Firmware"                              {channel="goecharger:goe:garage:firmware"}
+String                     GoEChargerAccessConfiguration        "Access configuration"                  {channel="goecharger:goe:garage:accessConfiguration"}

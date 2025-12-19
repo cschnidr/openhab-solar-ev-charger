@@ -1,0 +1,7 @@
+// Fronius inverter and meter configuration
+// Copy to fronius.things and update IP addresses
+
+Bridge fronius:bridge:mybridge [ hostname="192.168.1.100", refreshInterval=5 ] {
+    Thing powerinverter myinverter [ deviceId=1 ]
+    Thing meter mymeter [ deviceId=0 ]
+}

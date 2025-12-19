@@ -1,0 +1,4 @@
+// Go-E Charger configuration
+// Copy to goecharger.things and update IP address
+
+Thing goecharger:goe:garage [ ip="192.168.1.101", refreshInterval=10 ]
